@@ -1,0 +1,18 @@
+
+Random Forest
+Training Date - 2025-12-04 16:34:08.477532
+
+Features Used -
+rolling_avg_points - Player form from the last 5 games
+opponent_difficulty - Fixture difficulty from a scale of 1-10
+minutes - How many minutes a player gets from 0 -90 minutes
+
+Performance Metrics -
+MAE - 0.83 points
+RMSE - 2.01 points
+R² Score - 0.315
+
+Training Data -
+- Records: 8263
+- Players: 756
+- Gameweeks: 1 to 14
