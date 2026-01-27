@@ -1,16 +1,20 @@
 
 Random Forest
-Training Date - 2026-01-27 15:32:07.922738
+Training Date - 2026-01-27 16:02:55.620294
 
 Features Used -
 rolling_avg_points - Player form from the last 5 games
 opponent_difficulty - Fixture difficulty from a scale of 1-10
 minutes - How many minutes a player gets from 0 -90 minutes
+is_home - Whether the player is playing at home (1) or away (0)
+price - Player price in millions
+pos_GK, pos_DEF, pos_MID, pos_FWD - One-hot encoding for player positions
+clean_sheets_rolling_avg - Defensive form from last 5 games
 
 Performance Metrics -
-MAE - 0.76 points
-RMSE - 1.77 points
-R² Score - 0.454
+MAE - 0.73 points
+RMSE - 1.68 points
+R² Score - 0.508
 
 Training Data -
 - Records: 13247
