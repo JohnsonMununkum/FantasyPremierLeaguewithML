@@ -1,6 +1,6 @@
 
 Random Forest
-Training Date - 2026-01-27 16:02:55.620294
+Training Date - 2026-02-04 17:06:40.473770
 
 Features Used -
 rolling_avg_points - Player form from the last 5 games
