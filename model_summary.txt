@@ -1,6 +1,6 @@
 
 Random Forest
-Training Date - 2026-02-05 12:14:58.618197
+Training Date - 2026-02-06 12:27:20.365965
 
 Features Used -
 rolling_avg_points - Player form from the last 5 games
@@ -13,10 +13,10 @@ clean_sheets_rolling_avg - Defensive form from last 5 games
 
 Performance Metrics -
 MAE - 0.73 points
-RMSE - 1.68 points
-R² Score - 0.509
+RMSE - 1.65 points
+R² Score - 0.507
 
 Training Data -
-- Records: 13247
-- Players: 799
-- Gameweeks: 1 to 22
+- Records: 14538
+- Players: 811
+- Gameweeks: 1 to 24
