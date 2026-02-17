@@ -1,0 +1,2 @@
+web: cd flask_app && gunicorn app:app --workers 2 --timeout 120
+worker: cd flask_app && python scheduler.py
