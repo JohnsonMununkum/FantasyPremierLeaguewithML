@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+*.pyc
+.env
+.vscode/
+.DS_Store
+*.log
+.ipynb_checkpoints/
+flask_app/__pycache__/

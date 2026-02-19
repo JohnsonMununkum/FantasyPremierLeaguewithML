@@ -1,0 +1,30 @@
+services:
+  # web service (Flask App)
+  - type: web
+    name: fpl-intelligence-web
+    env: python
+    plan: free
+    buildCommand: pip install -r flask_app/requirements.txt
+    startCommand: cd flask_app && gunicorn app:app --workers 2 --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: FLASK_ENV
+        value: production
+    
+  # background weoker (Scheduler)
+  # allows the app to run scheuled tasks automatically in the background, such as updating player stats, fetching new data, etc.
+  - type: worker
+    name: fpl-intelligence-scheduler
+    env: python
+    plan: free
+    buildCommand: pip install -r flask_app/requirements.txt
+    startCommand: cd flask_app && python scheduler.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+
+databases:
+  # postgresql database to store all the data related to players, teams, fixtures, etc.
+  - name: fpl-database
+    plan: free
