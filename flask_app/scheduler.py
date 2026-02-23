@@ -1,6 +1,8 @@
 # scheduler.py
 # Background worker that runs 24/7 on Render
 # Gets the FPL data every 6 hours to keep predictions current
+# This does not actually run as render free tier does not upport the background worker 
+# used github actions instead
 import schedule
 import time
 from datetime import datetime

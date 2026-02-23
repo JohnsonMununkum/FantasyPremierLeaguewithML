@@ -5,8 +5,10 @@ import os
 from flask import Flask, jsonify
 import pandas as pd
 import sqlite3
+from datetime import datetime
 from utils.predictor import FPLPredictor
 from utils.optimizer import FPLOptimizer
+from utils.data_fetcher import FPLDataFetcher
 
 app = Flask(__name__)
 
@@ -43,7 +45,8 @@ def index():
             'predictions_bottom': '/api/predictions/bottom',
             'predictions_all': '/api/predictions/all',
             'optimize_single': '/api/optimize',
-            'optimize_multiple': '/api/optimize/multiple'
+            'optimize_multiple': '/api/optimize/multiple',
+            'trigger_update': '/api/trigger-update (POST/GET)'
         }
     })
 
@@ -97,12 +100,6 @@ def api_predictions_top():
 # Returns the players with lowest predicted points
 @app.route('/api/predictions/bottom')
 def api_predictions_bottom():
-    """
-    Get bottom 10 predicted players for next gameweek.
-    
-    Returns players with lowest predicted points - these are the
-    worst performers to avoid or consider transferring out.
-    """
     try:
         # Loads the latest data and generates predictions
         df = load_latest_data()
@@ -117,7 +114,7 @@ def api_predictions_bottom():
             'status': 'success',
             'type': 'bottom',
             'count': len(bottom_10),
-            'description': 'Players with lowest predicted points - consider avoiding',
+            'description': 'Players with lowest predicted points',
             'predictions': bottom_10
         })
     except Exception as e:
@@ -201,6 +198,49 @@ def api_optimize_multiple():
         return jsonify({
             'status': 'error',
             'message': str(e)
+        }), 500
+
+
+# update endpoint that is called by GitHub Actions every 6 hours to update FPL data
+# gets the latest player data, gameweek info, and recalculates features to keep predictions current
+@app.route('/api/trigger-update', methods=['POST', 'GET'])
+def trigger_update():
+    try:
+        print(f"Updating Data: {datetime.now()}")
+        
+        # Initializes the data fetcher
+        fetcher = FPLDataFetcher()
+        
+        # Gets and updates all player data
+        print("Getting the player data from FPL API")
+        fetcher.fetch_all_players()
+        
+        print("Getting gameweek and fixtures data")
+        fetcher.fetch_gameweek_data()
+        
+        print("Recalculating features based on the latest data")
+        fetcher.update_features()
+        
+        print(f"Data updated successfully")
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Data updated successfully',
+            'timestamp': datetime.now().isoformat(),
+            'updated': {
+                'players': 'fetched from FPL API',
+                'gameweek': 'updated',
+                'features': 'recalculated (10 features)',
+                'predictions': 'ready'
+            }
+        })
+        
+    except Exception as e:
+        print(f"ERROR during data update: {e}\n")
+        return jsonify({
+            'status': 'error',
+            'message': str(e),
+            'timestamp': datetime.now().isoformat()
         }), 500
 
 if __name__ == '__main__':
