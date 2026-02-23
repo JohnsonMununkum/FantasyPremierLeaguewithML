@@ -194,8 +194,9 @@ class FPLDataFetcher:
             conn.close()
             
             print(f"[{datetime.now()}] Calculated 10 features for {len(features_df)} players")
+            print(f"{current_gw}")
             return True
-            
+                    
         except Exception as e:
             print(f"[{datetime.now()}] Error updating features: {e}")
             raise
