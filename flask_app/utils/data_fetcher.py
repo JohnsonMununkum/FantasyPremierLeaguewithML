@@ -1,34 +1,46 @@
-# utils/data_fetcher.py
 # Fetches live FPL data and recalculates all features for production
 import requests
 import pandas as pd
 import sqlite3
 from datetime import datetime
 import numpy as np
+import json
 
 # Gets the latest data from the fpl api 
-# reclalculates all features using the same feature engineering process as in the featureengineering.ipynb
+# reclalculates all features using the features in featureengineering.ipynb
 class FPLDataFetcher:
    # Initializes the data fetcher with the database path and base URL for the FPL API
     def __init__(self, db_path='models/fpl_data.db'):
         self.db_path = db_path
         self.base_url = 'https://fantasy.premierleague.com/api'
     
-    # Gets all players data from the FPL API, including stats, form, prices, and availability
+    # Gets all the players data from the FPL API and saves it to the database
     def fetch_all_players(self):
         print(f"[{datetime.now()}] Getting player data from FPL API")
         
         try:
             # Gets bootstrap-static data which contains all players and teams information
             url = f'{self.base_url}/bootstrap-static/'
-            response = requests.get(url)
+            response = requests.get(url, timeout=30)
             response.raise_for_status()
             data = response.json()
             
             # Extracting the players and teams
-            players = pd.DataFrame(data['elements'])
+            players_raw = data['elements']
             teams = pd.DataFrame(data['teams'])
-            
+
+            # Converting the players to DataFrame and handling complex types
+            players = pd.DataFrame(players_raw)
+
+            # Converting any list/dict columns to JSON strings
+            # found that SQLite does not handle list/dict types well, so converting them to JSON strings before saving to the database
+            for col in players.columns:
+                if players[col].dtype == 'object':
+                    # Checking if the column contains lists or dicts
+                    sample = players[col].iloc[0] if len(players) > 0 else None
+                    if isinstance(sample, (list, dict)):
+                        players[col] = players[col].apply(lambda x: json.dumps(x) if x is not None else None)
+                        
             # Addding team names to players
             team_mapping = dict(zip(teams['id'], teams['name']))
             players['team_name'] = players['team'].map(team_mapping)
@@ -43,37 +55,51 @@ class FPLDataFetcher:
             return players
             
         except Exception as e:
-            print(f"[{datetime.now()}] Error fetching players: {e}")
+            print(f"[{datetime.now()}] Error Getting players: {e}")
             raise
     
-    # Fetches the current gameweek and fixtures data, and calculates opponent difficulty ratings based on team strength
+    # Getting the current gameweek and fixtures data, and calculates opponent difficulty ratings based on team strength
     def fetch_gameweek_data(self):
         print(f"[{datetime.now()}] Getting gameweek and fixtures data")
         
         try:
             # Getting the fixtures
             url = f'{self.base_url}/fixtures/'
-            response = requests.get(url)
+            response = requests.get(url, timeout=30)
             response.raise_for_status()
-            fixtures = pd.DataFrame(response.json())
-            
+            fixtures_raw = response.json()
+
+            # Converting the raw fixtures data to DataFrame and handling complex types
+            fixtures = pd.DataFrame(fixtures_raw)
+
+            # Converting list/dict columns to JSON strings
+            for col in fixtures.columns:
+                if fixtures[col].dtype == 'object':
+                    sample = fixtures[col].iloc[0] if len(fixtures) > 0 else None
+                    if isinstance(sample, (list, dict)):
+                        fixtures[col] = fixtures[col].apply(lambda x: json.dumps(x) if x is not None else None)
+
             # Getting the current gameweek info
             url = f'{self.base_url}/bootstrap-static/'
-            response = requests.get(url)
+            response = requests.get(url, timeout=30)
             data = response.json()
             
             current_gw = None
             for event in data['events']:
-                if event['is_current']:
+                if event.get('is_current'):
                     current_gw = event['id']
                     break
             
             if current_gw is None:
                 # Getting the next gameweek
                 for event in data['events']:
-                    if event['is_next']:
+                    if event.get('is_next'):
                         current_gw = event['id']
                         break
+
+            # Default to 1 if not found
+            if current_gw is None:
+                current_gw = 1
             
             # Saving the fixtures
             conn = sqlite3.connect(self.db_path)
@@ -88,10 +114,10 @@ class FPLDataFetcher:
             return True
             
         except Exception as e:
-            print(f"[{datetime.now()}] Error fetching gameweek data: {e}")
+            print(f"[{datetime.now()}] Error Getting gameweek data: {e}")
             raise
     
-    # Calculating all features again with the latest data from the API, using the same feature engineering process as in the featureengineering.ipynb
+    # Calculating all the features again with the latest data from the API, uses the same features as in featureengineering.ipynb
     def update_features(self):
         print(f"[{datetime.now()}] Recalculating all features")
         
@@ -113,17 +139,17 @@ class FPLDataFetcher:
             features_df = pd.DataFrame()
             
             features_df['player_id'] = players['id']
-            features_df['name'] = players['first_name'] + ' ' + players['second_name']
-            features_df['team'] = players['team_name']
+            features_df['name'] = players['first_name'].fillna('') + ' ' + players['second_name'].fillna('')
+            features_df['team'] = players['team_name'].fillna('Unknown')
             features_df['gameweek'] = current_gw
             
             # Position mapping
             position_map = {1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD'}
-            features_df['position'] = players['element_type'].map(position_map)
+            features_df['position'] = players['element_type'].map(position_map).fillna('MID')
             
             # rolling_avg_points 
-            # Uses the form field from API (last 5 games average)
-            features_df['rolling_avg_points'] = players['form'].astype(float)
+            # Uses the form field from API 
+            features_df['rolling_avg_points'] = pd.to_numeric(players['form'], errors='coerce').fillna(0)
             
             # opponent_difficulty
             # Uses average of team difficulty for upcoming fixtures
@@ -133,17 +159,17 @@ class FPLDataFetcher:
                 team_strength = players.groupby('team')['total_points'].mean()
                 features_df['opponent_difficulty'] = 3.0
             except:
-                # Sets to default difficulty if fixtures data is not available
+                # default difficulty is set to 3.0, if fixtures data is not available
                 features_df['opponent_difficulty'] = 3.0
             
             # Expected minutes based on recent playing time
-            features_df['minutes'] = players['minutes'].fillna(0)
+            features_df['minutes'] = pd.to_numeric(players['minutes'], errors='coerce').fillna(0)
             
             # is_home
             features_df['is_home'] = 0.5
             
             # price
-            features_df['price'] = players['now_cost'] / 10.0
+            features_df['price'] = pd.to_numeric(players['now_cost'], errors='coerce').fillna(40) / 10.0
             
             # Position encoding, one-hot
             features_df['pos_GK'] = (features_df['position'] == 'GK').astype(int)
@@ -153,8 +179,10 @@ class FPLDataFetcher:
             
             # clean_sheets_rolling_avg
             # Uses clean sheets per 90 minutes for defenders/goalkeepers
-            features_df['clean_sheets_rolling_avg'] = players['clean_sheets'].fillna(0) / np.maximum(players['minutes'].fillna(1) / 90, 1)
-            
+            clean_sheets = pd.to_numeric(players['clean_sheets'], errors='coerce').fillna(0)
+            minutes_played = pd.to_numeric(players['minutes'], errors='coerce').fillna(1)
+            features_df['clean_sheets_rolling_avg'] = clean_sheets / np.maximum(minutes_played / 90, 1)
+                        
             # 0 if the player is not a defender or goalkeeper, as clean sheets are not relevant for midfielders and forwards
             features_df.loc[~features_df['position'].isin(['GK', 'DEF']), 'clean_sheets_rolling_avg'] = 0
             
@@ -171,4 +199,3 @@ class FPLDataFetcher:
         except Exception as e:
             print(f"[{datetime.now()}] Error updating features: {e}")
             raise
-
