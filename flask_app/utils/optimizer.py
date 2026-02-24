@@ -62,8 +62,8 @@ class FPLOptimizer:
         # Building a squad dictionary organized by position
         squad = {
             'status': 'success',
-            'total_cost': sum(prices[i] for i in selected_ids),
-            'total_predicted': sum(predicted_points[i] for i in selected_ids),
+            'total_cost': round(sum(prices[i] for i in selected_ids), 1),
+            'total_predicted': round(sum(predicted_points[i] for i in selected_ids), 0),
             'goalkeepers': [],
             'defenders': [],
             'midfielders': [],
@@ -75,8 +75,8 @@ class FPLOptimizer:
             player_info = {
                 'name': names[pid],
                 'team': teams.get(pid, 'Unknown'),
-                'price': prices[pid],
-                'predicted_points': predicted_points[pid]
+                'price': round(prices[pid], 1),
+                'predicted_points': round(predicted_points[pid], 0)
             }
             
             if positions[pid] == 'GK':
@@ -96,11 +96,11 @@ class FPLOptimizer:
         all_players = squad['goalkeepers'] + squad['defenders'] + squad['midfielders'] + squad['forwards']
         captain = max(all_players, key=lambda x: x['predicted_points'])
         squad['captain'] = captain['name']
-        squad['captain_points'] = captain['predicted_points']
+        squad['captain_points'] = round(captain['predicted_points'], 0)
         
         # Calculating the total with captain bonus
         # Captains points are doubled
-        squad['total_with_captain'] = squad['total_predicted'] + captain['predicted_points']
+        squad['total_with_captain'] = round(squad['total_predicted'] + captain['predicted_points'], 0)
         
         return squad
     

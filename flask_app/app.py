@@ -222,6 +222,19 @@ def trigger_update():
         fetcher.update_features()
         
         print(f"Data updated successfully")
+
+         # Getting the current gameweek number from database
+        current_gw = "Unknown"
+        try:
+            conn = sqlite3.connect('models/fpl_data.db')
+            gw_query = 'SELECT current_gameweek FROM current_gameweek LIMIT 1'
+            gw_result = pd.read_sql_query(gw_query, conn)
+            if len(gw_result) > 0:
+                current_gw = gw_result['current_gameweek'][0]
+            conn.close()
+        except Exception as gw_error:
+            print(f"Could not fetch gameweek: {gw_error}")
+            current_gw = "Unknown"
         
         return jsonify({
             'status': 'success',
@@ -229,7 +242,7 @@ def trigger_update():
             'timestamp': datetime.now().isoformat(),
             'updated': {
                 'players': 'fetched from FPL API',
-                'gameweek': 'updated',
+                'gameweek': f'Gameweek {current_gw}' if current_gw != "Unknown" else 'updated',
                 'features': 'recalculated (10 features)',
                 'predictions': 'ready'
             }
