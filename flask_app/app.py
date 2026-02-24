@@ -2,7 +2,7 @@
 # Flask API for FPL Intelligence System
 # Provides endpoints for predictions and team optimization
 import os
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 import pandas as pd
 import sqlite3
 from datetime import datetime
@@ -26,8 +26,29 @@ def load_latest_data():
     conn.close()
     return df
 
-# API Endpoints
+# HTML Routes
+# Renders the home page with an overview of the project and its features
 @app.route('/')
+def home():
+    return render_template('index.html')
+
+# Predictions page showing top and bottom players based on the latest model predictions
+@app.route('/predictions')
+def predictions():
+    return render_template('predictions.html')
+
+# Squad builder page where users can see 3 different optimal squad options based on the latest predictions and constraints
+@app.route('/squads')
+def squads():
+    return render_template('squads.html')
+
+# Player Statitics page
+@app.route('/player/<int:player_id>')
+def player_detail(player_id):
+    return render_template('player.html', player_id=player_id)
+
+# API Endpoints
+@app.route('/api/info')
 def index():
     return jsonify({
         'name': 'FPL Intelligence API',
@@ -46,7 +67,8 @@ def index():
             'predictions_all': '/api/predictions/all',
             'optimize_single': '/api/optimize',
             'optimize_multiple': '/api/optimize/multiple',
-            'trigger_update': '/api/trigger-update (POST/GET)'
+            'trigger_update': '/api/trigger-update (POST/GET)',
+            'player_detail': '/api/player/<id>'
         }
     })
 
@@ -80,7 +102,7 @@ def api_predictions_top():
         
         # Gets the top 10 by predicted points
         top_10 = df.nlargest(10, 'predicted_points')[
-            ['name', 'position', 'team', 'price', 'predicted_points']
+            ['player_id', 'name', 'position', 'team', 'price', 'predicted_points']
         ].to_dict('records')
         
         return jsonify({
@@ -107,7 +129,7 @@ def api_predictions_bottom():
         
         # Gets the bottom 10 by predicted points
         bottom_10 = df.nsmallest(10, 'predicted_points')[
-            ['name', 'position', 'team', 'price', 'predicted_points']
+            ['player_id', 'name', 'position', 'team', 'price', 'predicted_points']
         ].to_dict('records')
         
         return jsonify({
@@ -133,11 +155,11 @@ def api_predictions_all():
         
         # Gets the top 10 and bottom 10
         top_10 = df.nlargest(10, 'predicted_points')[
-            ['name', 'position', 'team', 'price', 'predicted_points']
+            ['player_id', 'name', 'position', 'team', 'price', 'predicted_points']
         ].to_dict('records')
         
         bottom_10 = df.nsmallest(10, 'predicted_points')[
-            ['name', 'position', 'team', 'price', 'predicted_points']
+            ['player_id', 'name', 'position', 'team', 'price', 'predicted_points']
         ].to_dict('records')
         
         return jsonify({
@@ -194,6 +216,56 @@ def api_optimize_multiple():
             'message': f'Generated {len(squads)} optimal squad options',
             'squads': squads
         })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+# Endpoint to get information on a specific player
+@app.route('/api/player/<int:player_id>')
+def api_player_detail(player_id):
+    try:
+        # Loads the player data
+        conn = sqlite3.connect('models/fpl_data.db')
+        
+        # Getting the specific player from the features table
+        query = f"SELECT * FROM features WHERE player_id = {player_id}"
+        player_df = pd.read_sql_query(query, conn)
+        
+        if len(player_df) == 0:
+            conn.close()
+            return jsonify({
+                'status': 'error',
+                'message': 'Player not found'
+            }), 404
+        
+        # Getting the predicted points for the player
+        player_df['predicted_points'] = predictor.predict_points(player_df)
+        player_data = player_df.iloc[0].to_dict()
+        
+        # Getting raw data for stats
+        raw_query = f"SELECT * FROM players_raw WHERE id = {player_id}"
+        raw_df = pd.read_sql_query(raw_query, conn)
+        conn.close()
+        
+        if len(raw_df) > 0:
+            raw_data = raw_df.iloc[0].to_dict()
+            # Adding additional stats to the player data
+            player_data['total_points'] = raw_data.get('total_points', 0)
+            player_data['goals_scored'] = raw_data.get('goals_scored', 0)
+            player_data['assists'] = raw_data.get('assists', 0)
+            player_data['bonus'] = raw_data.get('bonus', 0)
+            player_data['selected_by_percent'] = raw_data.get('selected_by_percent', '0')
+            player_data['transfers_in'] = raw_data.get('transfers_in', 0)
+            player_data['transfers_out'] = raw_data.get('transfers_out', 0)
+            player_data['photo'] = f"https://resources.premierleague.com/premierleague/photos/players/110x140/p{raw_data.get('code', '')}.png"
+        
+        return jsonify({
+            'status': 'success',
+            'player': player_data
+        })
+        
     except Exception as e:
         return jsonify({
             'status': 'error',
