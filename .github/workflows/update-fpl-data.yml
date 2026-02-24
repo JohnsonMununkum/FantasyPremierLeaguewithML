@@ -1,0 +1,49 @@
+# GitHub Actions workflow to update FPL data every 6 hours
+name: Update FPL Data
+
+# Runs every 6 hours
+on:
+  schedule:
+    # Runs at 00:00, 06:00, 12:00, 18:00 UTC every day
+    - cron: '0 */6 * * *'
+  
+  # Allows manual trigger from GitHub Actions tab
+  workflow_dispatch:
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Trigger FPL data update
+        run: |
+          echo "Updating FPL data from GitHub Actions"
+          echo "Time: $(date)"
+          
+          # Calling my Render API endpoint
+          response=$(curl -X POST \
+            -H "Content-Type: application/json" \
+            -w "\n%{http_code}" \
+            -s \
+           https://fpl-intelligence-web.onrender.com/api/trigger-update)
+          
+          # Extracting the HTTP status code
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n-1)
+          
+          echo "Response code: $http_code"
+          echo "Response body: $body"
+          
+          # Check if successful
+          if [ $http_code -eq 200 ]; then
+            echo "FPL data updated successfully"
+          else
+            echo "FPL data was not updated successfully!"
+            exit 1
+          fi
+      
+      - name: Update complete
+        if: success()
+        run: |
+          echo "FPL data updated successfully"
+          echo "Next update in 6 hours"
