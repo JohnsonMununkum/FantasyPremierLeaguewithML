@@ -159,6 +159,7 @@ print("Initializing FPL Intelligence API")
 predictor = FPLPredictor('models/fpl_predictor_model.pkl')
 optimizer = FPLOptimizer()
 print("Model and optimizer loaded")
+initialize_database()
 
 # Loads the latest gameweek data from the database
 def load_latest_data():
