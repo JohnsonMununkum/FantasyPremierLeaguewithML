@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Squad Builder - FPL Intelligence{% endblock %}
+
+{% block content %}
+<!-- Optimal Squad Builder -->
+<div class="hero">
+    <div class="container text-center">
+        <h1 class="display-4 fw-bold mb-3">
+            <i class="bi bi-people-fill"></i> Optimal Squad Builder
+        </h1>
+        <p class="lead mb-0">
+            3 Different Optimal 15-Player Squads Using Linear Programming
+        </p>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <!-- Button to generate squads -->
+    <div class="text-center mb-4">
+        <button id="generateBtn" class="btn btn-primary btn-lg" onclick="generateSquads()">
+            <i class="bi bi-lightning-charge-fill"></i> Generate Optimal Squads
+        </button>
+        <p class="text-muted mt-2 small">
+            <i class="bi bi-info-circle"></i> Budget: £100m | Formation: 2-5-5-3 | Max 3 per team
+        </p>
+    </div>
+
+    <!-- The Spinner shows while waiting for the api response -->
+    <!-- The spinner is hidden when the the api response is received -->
+    <div id="loading" class="loading" style="display: none;">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading</span>
+        </div>
+        <p class="mt-3 text-muted">Optimizing squads</p>
+    </div>
+
+    <!-- Section that shows the generated squads -->
+    <div id="squadsContainer" style="display: none;">
+        <ul class="nav nav-tabs nav-fill mb-3" id="squadTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="squad1-tab" data-bs-toggle="tab" data-bs-target="#squad1" type="button">
+                    <i class="bi bi-star-fill"></i> Squad Option 1
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="squad2-tab" data-bs-toggle="tab" data-bs-target="#squad2" type="button">
+                    <i class="bi bi-star"></i> Squad Option 2
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="squad3-tab" data-bs-toggle="tab" data-bs-target="#squad3" type="button">
+                    <i class="bi bi-star"></i> Squad Option 3
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="squadTabsContent">
+            <!-- Squad 1 -->
+            <div class="tab-pane fade show active" id="squad1" role="tabpanel">
+                <div id="squad1Content"></div>
+            </div>
+            <!-- Squad 2 -->
+            <div class="tab-pane fade" id="squad2" role="tabpanel">
+                <div id="squad2Content"></div>
+            </div>
+            <!-- Squad 3 -->
+            <div class="tab-pane fade" id="squad3" role="tabpanel">
+                <div id="squad3Content"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Message is shown if api fails to load predictions -->
+    <div id="errorMessage" class="alert alert-danger" style="display: none;">
+        <i class="bi bi-exclamation-circle-fill"></i>
+        <span id="errorText"></span>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Function to generate the optimal squads
+    function generateSquads() {
+        // Showing the loading spinner
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('squadsContainer').style.display = 'none';
+        document.getElementById('errorMessage').style.display = 'none';
+        document.getElementById('generateBtn').disabled = true;
+
+        // Getting the squads from the api
+        fetch('/api/optimize/multiple')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Displaying each optimal squad
+                    data.squads.forEach((squad, index) => {
+                        displaySquad(squad, index + 1);
+                    });
+                    
+                    // Hiding the loading spinner when data is loaded, then showing the squads container
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('squadsContainer').style.display = 'block';
+                    document.getElementById('generateBtn').disabled = false;
+                } else {
+                    showError('Failed to generate squads');
+                    document.getElementById('generateBtn').disabled = false;
+                }
+            })
+            .catch(error => {
+                showError('Error connecting to API: ' + error.message);
+                document.getElementById('generateBtn').disabled = false;
+            });
+    }
+
+    // Function to display a squad
+    function displaySquad(squad, squadNumber) {
+        const containerId = `squad${squadNumber}Content`;
+        const container = document.getElementById(containerId);
+
+        let html = `
+            <div class="card mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, var(--fpl-purple) 0%, #4a0052 100%); color: white;">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <h4 class="mb-0">
+                                <i class="bi bi-trophy-fill"></i> Squad Option ${squadNumber}
+                            </h4>
+                        </div>
+                        <div class="col-md-8 text-md-end mt-2 mt-md-0">
+                            <span class="badge bg-light text-dark me-2">
+                                <i class="bi bi-cash-coin"></i> £${squad.total_cost.toFixed(1)}m
+                            </span>
+                            <span class="badge bg-success me-2">
+                                <i class="bi bi-graph-up"></i> ${Math.round(squad.total_predicted)} pts
+                            </span>
+                            <span class="badge bg-warning text-dark">
+                                <i class="bi bi-star-fill"></i> ${Math.round(squad.total_with_captain)} pts (with captain)
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <i class="bi bi-person-badge-fill"></i>
+                        <strong>Captain:</strong> ${squad.captain} 
+                        <span class="badge bg-primary">${squad.captain_points} pts × 2</span>
+                    </div>
+
+                    <!-- Goalkeepers -->
+                    ${createPositionSection('Goalkeepers', squad.goalkeepers, 'bg-gk')}
+
+                    <!-- Defenders -->
+                    ${createPositionSection('Defenders', squad.defenders, 'bg-def')}
+
+                    <!-- Midfielders -->
+                    ${createPositionSection('Midfielders', squad.midfielders, 'bg-mid')}
+
+                    <!-- Forwards -->
+                    ${createPositionSection('Forwards', squad.forwards, 'bg-fwd')}
+                </div>
+            </div>
+        `;
+
+        container.innerHTML = html;
+    }
+
+    // Function to create position section uses a bootstrap icon based on the position, and creates a table with the players in that position
+    function createPositionSection(title, players, badgeClass) {
+        let icon = '';
+        switch(title) {
+            case 'Goalkeepers': 
+                icon = '<i class="bi bi-shield-fill text-warning"></i>'; 
+                break;
+            case 'Defenders': 
+                icon = '<i class="bi bi-shield-check text-primary"></i>'; 
+                break;
+            case 'Midfielders': 
+                icon = '<i class="bi bi-circle-fill text-success"></i>'; 
+                break;
+            case 'Forwards': 
+                icon = '<i class="bi bi-bullseye text-danger"></i>'; 
+                break;
+        }
+
+        let html = `
+            <div class="mb-4">
+                <h5 class="mb-3">
+                    ${icon} ${title} (${players.length})
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Player</th>
+                                <th>Team</th>
+                                <th>Price</th>
+                                <th>Predicted Points</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+
+        players.forEach(player => {
+            html += `
+                <tr class="clickable-row" onclick="window.location.href='/player/${player.player_id || 0}'">
+                    <td>
+                        <strong>${player.name}</strong>
+                    </td>
+                    <td>${player.team}</td>
+                    <td>£${player.price.toFixed(1)}</td>
+                    <td><span class="badge ${badgeClass}">${Math.round(player.predicted_points)}</span></td>
+                </tr>
+            `;
+        });
+
+        html += `
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        return html;
+    }
+
+    // Function to show the error message if the api call fails
+    function showError(message) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('squadsContainer').style.display = 'none';
+        document.getElementById('errorMessage').style.display = 'block';
+        document.getElementById('errorText').textContent = message;
+    }
+</script>
+{% endblock %}
