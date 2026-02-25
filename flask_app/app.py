@@ -36,6 +36,10 @@ def load_latest_data():
 
     df = pd.read_sql_query(query, conn)
     conn.close()
+
+    # Remove duplicates by player_id, keeping the latest gameweek entry for each player
+    df = df.drop_duplicates(subset=['player_id'], keep='last')
+
     return df
 
 # HTML Routes
