@@ -10,7 +10,7 @@ from utils.predictor import FPLPredictor
 from utils.optimizer import FPLOptimizer
 from utils.data_fetcher import FPLDataFetcher
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates')
 
 # Initializes the predictor and optimizer on startup
 print("Initializing FPL Intelligence API")

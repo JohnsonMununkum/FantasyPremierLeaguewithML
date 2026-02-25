@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Predictions - FPL Intelligence{% endblock %}
+
+{% block content %}
+<!-- Player predictions -->
+<div class="hero">
+    <div class="container text-center">
+        <h1 class="display-4 fw-bold mb-3">
+            <i class="bi bi-graph-up-arrow"></i> Player Predictions
+        </h1>
+        <p class="lead mb-0">
+            ML-Powered Predictions for Next Gameweek
+        </p>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <!-- Refresh button to refresh predictions -->
+    <div class="text-end mb-3">
+        <button id="refreshBtn" class="btn btn-primary" onclick="loadPredictions()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh Predictions
+        </button>
+    </div>
+
+    <!-- The Spinner shows while waiting for the api response -->
+    <!-- The spinner is hidden when the the api response is received -->
+    <div id="loading" class="loading" style="display: none;">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading</span>
+        </div>
+        <p class="mt-3 text-muted">Generating predictions</p>
+    </div>
+
+    <!-- Showing the top 10 Players with the highest predictions -->
+    <div id="topPlayers" style="display: none;">
+        <div class="card mb-4">
+            <div class="card-header text-white" style="background: linear-gradient(135deg, #198754 0%, #146c43 100%);">
+                <h3 class="mb-0">
+                    <i class="bi bi-trophy-fill"></i> Top 10 Players to Pick
+                </h3>
+                <small>Players with highest predicted points</small>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Player</th>
+                                <th>Position</th>
+                                <th>Team</th>
+                                <th>Price</th>
+                                <th>Predicted Points</th>
+                            </tr>
+                        </thead>
+                        <tbody id="topPlayersBody">
+                            <!-- Data is loaded through JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Showing the bottom 10 Players with the lowest predictions -->
+    <div id="bottomPlayers" style="display: none;">
+        <div class="card">
+            <div class="card-header text-white" style="background: linear-gradient(135deg, #dc3545 0%, #bb2d3b 100%);">
+                <h3 class="mb-0">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Bottom 10 Players to Avoid
+                </h3>
+                <small>Players with lowest predicted points</small>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Player</th>
+                                <th>Position</th>
+                                <th>Team</th>
+                                <th>Price</th>
+                                <th>Predicted Points</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bottomPlayersBody">
+                            <!-- Data is loaded through JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Message is shown if api fails to load predictions -->
+    <div id="errorMessage" class="alert alert-danger" style="display: none;">
+        <i class="bi bi-exclamation-circle-fill"></i>
+        <span id="errorText"></span>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Event listner to load predictions on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadPredictions();
+    });
+
+    // Function to load predictions from the API
+    function loadPredictions() {
+        // Showing the loading spinner
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('topPlayers').style.display = 'none';
+        document.getElementById('bottomPlayers').style.display = 'none';
+        document.getElementById('errorMessage').style.display = 'none';
+
+        // Getting the predictions from the API
+        fetch('/api/predictions/all')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Adding the top players from the API response to the table
+                    populateTable('topPlayersBody', data.top_predictions.players, 'top');
+                    
+                    // Adding the bottom players from the API response to the table
+                    populateTable('bottomPlayersBody', data.bottom_predictions.players, 'bottom');
+                    
+                    // Hiding the loading spinner when data is loaded, then showing the tables
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('topPlayers').style.display = 'block';
+                    document.getElementById('bottomPlayers').style.display = 'block';
+                } else {
+                    showError('Failed to load predictions');
+                }
+            })
+            .catch(error => {
+                showError('Error connecting to API: ' + error.message);
+            });
+    }
+
+    // Function to populate the table with the player data
+    function populateTable(tableBodyId, players, type) {
+        const tbody = document.getElementById(tableBodyId);
+        tbody.innerHTML = '';
+
+        players.forEach((player, index) => {
+            const row = document.createElement('tr');
+            row.className = 'clickable-row';
+            row.onclick = () => window.location.href = `/player/${player.player_id}`;
+            
+            // Adding background color for the top & bottom
+            if (type === 'top' && index < 3) {
+                row.style.backgroundColor = '#d4edda';
+            } else if (type === 'bottom') {
+                row.style.backgroundColor = '#f8d7da';
+            }
+
+            // Getting the position badge color
+            let positionClass = '';
+            switch(player.position) {
+                case 'GK': positionClass = 'bg-gk'; break;
+                case 'DEF': positionClass = 'bg-def'; break;
+                case 'MID': positionClass = 'bg-mid'; break;
+                case 'FWD': positionClass = 'bg-fwd'; break;
+            }
+
+            row.innerHTML = `
+                <td><strong>${index + 1}</strong></td>
+                <td>${player.name}</td>
+                <td><span class="badge position-badge ${positionClass}">${player.position}</span></td>
+                <td>${player.team}</td>
+                <td>£${player.price.toFixed(1)}</td>
+                <td><strong>${Math.round(player.predicted_points)}</strong></td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+    }
+
+    // Function to show the error message if the api call fails
+    function showError(message) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('topPlayers').style.display = 'none';
+        document.getElementById('bottomPlayers').style.display = 'none';
+        document.getElementById('errorMessage').style.display = 'block';
+        document.getElementById('errorText').textContent = message;
+    }
+</script>
+{% endblock %}
