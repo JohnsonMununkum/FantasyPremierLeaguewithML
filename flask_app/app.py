@@ -20,28 +20,17 @@ print("Model and optimizer loaded")
 
 # Loads the latest gameweek data from the database
 def load_latest_data():
+    """Load player data with features for predictions"""
     conn = sqlite3.connect('models/fpl_data.db')
-    # Gets the most recent features for each player
-    query = '''
-    SELECT f.*
-    FROM features f
-    INNER JOIN (
-        SELECT player_id, MAX(gameweek) as latest_gw
-        FROM features
-        GROUP BY player_id
-    ) latest
-    ON f.player_id = latest.player_id 
-    AND f.gameweek = latest.latest_gw
-    '''
-
-    df = pd.read_sql_query(query, conn)
+    
+    # Getting all the features in the database to use for predictions
+    df = pd.read_sql_query('SELECT * FROM features', conn)
     conn.close()
-
-    # Remove duplicates by player_id, keeping the latest gameweek entry for each player
-    df = df.drop_duplicates(subset=['player_id'], keep='last')
-
+    
+    # Getting the latest gameweek per player
+    df = df.sort_values('gameweek').groupby('player_id').tail(1).reset_index(drop=True)
+    
     return df
-
 # HTML Routes
 # Renders the home page with an overview of the project and its features
 @app.route('/')
