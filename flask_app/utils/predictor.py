@@ -28,6 +28,8 @@ class FPLPredictor:
         X = player_data[self.features]
         # uses the trained model to predict points & returns an array of the predicted points
         # & making the number a whole number
+        # handling missing values
+        X = X.fillna(0)
         return self.model.predict(X).round(0)
     
     # Predicts points for players in a specific position and returns the top 10 players based on predicted points

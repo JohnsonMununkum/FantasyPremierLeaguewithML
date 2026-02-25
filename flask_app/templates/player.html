@@ -181,7 +181,11 @@
                                 <tr>
                                     <td><strong>Home/Away</strong></td>
                                     <td class="text-end">
-                                        ${player.is_home === 1 ? 'Home' : player.is_home === 0 ? 'Away' : 'Neutral'}
+                                        ${player.is_home === 1 
+                                            ? '<span class="badge bg-success">Home</span>' 
+                                            : player.is_home === 0 
+                                                ? '<span class="badge bg-warning text-dark">Away</span>' 
+                                                : '<span class="badge bg-secondary">Unknown</span>'}
                                     </td>
                                 </tr>
                                 <tr>

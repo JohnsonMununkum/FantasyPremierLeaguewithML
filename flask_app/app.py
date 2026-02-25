@@ -80,7 +80,7 @@ def home():
     # Getting the player count from the database to display on the home page
     try:
         conn = sqlite3.connect('models/fpl_data.db')
-        result = pd.read_sql_query("SELECT COUNT(*) as count FROM players_raw", conn)
+        result = pd.read_sql_query("SELECT COUNT(*) as count FROM players", conn)
         player_count = result['count'][0]
         conn.close()
     except:
