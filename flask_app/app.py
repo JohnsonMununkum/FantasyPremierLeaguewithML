@@ -21,7 +21,19 @@ print("Model and optimizer loaded")
 # Loads the latest gameweek data from the database
 def load_latest_data():
     conn = sqlite3.connect('models/fpl_data.db')
-    query = 'SELECT * FROM features WHERE gameweek = (SELECT MAX(gameweek) FROM features)'
+    # Gets the most recent features for each player
+    query = '''
+    SELECT f.*
+    FROM features f
+    INNER JOIN (
+        SELECT player_id, MAX(gameweek) as latest_gw
+        FROM features
+        GROUP BY player_id
+    ) latest
+    ON f.player_id = latest.player_id 
+    AND f.gameweek = latest.latest_gw
+    '''
+
     df = pd.read_sql_query(query, conn)
     conn.close()
     return df
