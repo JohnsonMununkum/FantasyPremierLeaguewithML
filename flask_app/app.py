@@ -10,6 +10,148 @@ from utils.predictor import FPLPredictor
 from utils.optimizer import FPLOptimizer
 from utils.data_fetcher import FPLDataFetcher
 
+# Function to initialize the players_raw database and create tables if they don't exist
+def initialize_database():
+    try:
+        conn = sqlite3.connect('models/fpl_data.db')
+        cursor = conn.cursor()
+        
+        # Checking if the players_raw table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='players_raw'")
+        table_exists = cursor.fetchone()
+        
+        if not table_exists:
+            print("Initial setup Creating and populating the database")
+            
+            # Creating the players_raw table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS players_raw (
+                    id INTEGER PRIMARY KEY,
+                    first_name TEXT,
+                    second_name TEXT,
+                    web_name TEXT,
+                    team INTEGER,
+                    team_name TEXT,
+                    element_type INTEGER,
+                    now_cost INTEGER,
+                    total_points INTEGER DEFAULT 0,
+                    goals_scored INTEGER DEFAULT 0,
+                    assists INTEGER DEFAULT 0,
+                    minutes INTEGER DEFAULT 0,
+                    bonus INTEGER DEFAULT 0,
+                    clean_sheets INTEGER DEFAULT 0,
+                    selected_by_percent TEXT DEFAULT '0',
+                    transfers_in INTEGER DEFAULT 0,
+                    transfers_out INTEGER DEFAULT 0,
+                    code INTEGER,
+                    form TEXT DEFAULT '0'
+                )
+            ''')
+            
+            # Creating the features table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS features (
+                    player_id INTEGER,
+                    name TEXT,
+                    team TEXT,
+                    gameweek INTEGER,
+                    position TEXT,
+                    rolling_avg_points REAL DEFAULT 0,
+                    opponent_difficulty REAL DEFAULT 3.0,
+                    minutes INTEGER DEFAULT 0,
+                    is_home REAL DEFAULT 0.5,
+                    price REAL,
+                    pos_GK INTEGER DEFAULT 0,
+                    pos_DEF INTEGER DEFAULT 0,
+                    pos_MID INTEGER DEFAULT 0,
+                    pos_FWD INTEGER DEFAULT 0,
+                    clean_sheets_rolling_avg REAL DEFAULT 0
+                )
+            ''')
+            
+            # Creating the teams table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS teams (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT,
+                    short_name TEXT,
+                    strength INTEGER
+                )
+            ''')
+            
+            # Creating the fixtures table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS fixtures (
+                    id INTEGER PRIMARY KEY,
+                    event INTEGER,
+                    team_h INTEGER,
+                    team_a INTEGER,
+                    team_h_difficulty INTEGER,
+                    team_a_difficulty INTEGER
+                )
+            ''')
+            
+            # Creating the current_gameweek table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS current_gameweek (
+                    current_gameweek INTEGER
+                )
+            ''')
+            
+            # Creating the last_update table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS last_update (
+                    last_update TEXT
+                )
+            ''')
+            
+            conn.commit()
+            conn.close()
+            print("Empty database tables created successfully")
+            
+            # populating the database with real data
+            print("\nGetting initial data from FPL API")
+            
+            try:
+                fetcher = FPLDataFetcher()
+                
+                print("Getting player data")
+                fetcher.fetch_all_players()
+                
+                print("Getting gameweek and fixtures data")
+                fetcher.fetch_gameweek_data()
+                
+                print("Calculating features")
+                fetcher.update_features()
+                
+                print("Saving timestamp")
+                fetcher.save_update_timestamp()
+                
+                print("Setup done database fully initialized and populated with data")
+                
+            except Exception as e:
+                print(f"\nError auto-populating data: {e}")
+                print("Tables created but empty - please manually run:")
+                print("POST /api/trigger-update")
+                print("=" * 60)
+        
+        else:
+            # Tables exist, checking if they have data
+            cursor.execute("SELECT COUNT(*) FROM players_raw")
+            player_count = cursor.fetchone()[0]
+            
+            if player_count > 0:
+                print(f"Database ready: {player_count} players loaded")
+            else:
+                print("Database tables exist but are empty")
+                print("Consider running /api/trigger-update to populate data")
+            
+            conn.close()
+        
+    except Exception as e:
+        print(f"Error initializing database: {e}")
+
+
 app = Flask(__name__, template_folder='templates')
 
 # Initializes the predictor and optimizer on startup
