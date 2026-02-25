@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}Home - FPL Intelligence{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero">
+    <div class="container text-center">
+        <h1 class="display-3 fw-bold mb-3">
+            <i class="bi bi-robot"></i> FPL Intelligence
+        </h1>
+        <p class="lead mb-4">
+            AI-Powered Fantasy Premier League Predictions & Squad Optimization
+        </p>
+        <p class="mb-4">
+            <span class="badge bg-success me-2">
+                <i class="bi bi-check-circle"></i> Machine Learning
+            </span>
+            <span class="badge bg-info me-2">
+                <i class="bi bi-graph-up"></i> R² Score: 0.508
+            </span>
+            <span class="badge bg-warning text-dark">
+                <i class="bi bi-cpu"></i> 10 Features
+            </span>
+        </p>
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+            <a href="/predictions" class="btn btn-primary btn-lg">
+                <i class="bi bi-graph-up-arrow"></i> View Predictions
+            </a>
+            <a href="/squads" class="btn btn-outline-light btn-lg">
+                <i class="bi bi-people-fill"></i> Build Squad
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Features -->
+<div class="container mb-5">
+    <div class="row g-4">
+        <!-- Player Predictions -->
+        <div class="col-md-4">
+            <div class="card h-100 text-center p-4">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <i class="bi bi-graph-up text-primary" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="card-title h5">Player Predictions</h3>
+                    <p class="card-text text-muted">
+                        Get top 10 and bottom 10 player predictions based on the 10 engineered features and Random Forest ML model.
+                    </p>
+                    <a href="/predictions" class="btn btn-sm btn-outline-primary">
+                        View Predictions <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Squad Optimization -->
+        <div class="col-md-4">
+            <div class="card h-100 text-center p-4">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <i class="bi bi-people text-success" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="card-title h5">Squad Optimization</h3>
+                    <p class="card-text text-muted">
+                        Generate 3 optimal 15-player squads using Linear Programming within £100m budget and FPL rules.
+                    </p>
+                    <a href="/squads" class="btn btn-sm btn-outline-success">
+                        Build Squad <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Auto updates -->
+        <div class="col-md-4">
+            <div class="card h-100 text-center p-4">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <i class="bi bi-arrow-repeat text-info" style="font-size: 3rem;"></i>
+                    </div>
+                    <h3 class="card-title h5">Auto Updates</h3>
+                    <p class="card-text text-muted">
+                        Data automatically updates every 6 hours through GitHub Actions, keeping predictions current throughout the season.
+                    </p>
+                    <div class="badge bg-info mt-2">
+                        <i class="bi bi-clock"></i> updated: {{ last_update }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- How the app works -->
+<div class="container mb-5">
+    <h2 class="text-center mb-4">
+        <i class="bi bi-gear-fill"></i> How It Works
+    </h2>
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-body p-4">
+                    <ol class="list-group list-group-numbered">
+                        <li class="list-group-item d-flex justify-content-between align-items-start border-0">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">
+                                    <i class="bi bi-download text-primary"></i> Data Collection
+                                </div>
+                                Live FPL API data fetched every 6 hours automatically
+                            </div>
+                            <span class="badge bg-primary rounded-pill">Automated</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start border-0">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">
+                                    <i class="bi bi-wrench text-success"></i> Feature Engineering
+                                </div>
+                                10 features: form, difficulty, minutes, price, position, clean sheets
+                            </div>
+                            <span class="badge bg-success rounded-pill">ML Ready</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start border-0">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">
+                                    <i class="bi bi-cpu text-info"></i> ML Prediction
+                                </div>
+                                Random Forest model predicts player points (R² = 0.508, MAE = 0.78)
+                            </div>
+                            <span class="badge bg-info rounded-pill">Accurate</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start border-0">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">
+                                    <i class="bi bi-trophy text-warning"></i> Squad Optimization
+                                </div>
+                                PuLP Linear Programming finds optimal team within constraints
+                            </div>
+                            <span class="badge bg-warning text-dark rounded-pill">Optimal</span>
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Section -->
+<div class="container mb-5">
+    <h2 class="text-center mb-4">
+        <i class="bi bi-bar-chart-fill"></i> System Statistics
+    </h2>
+    <div class="row text-center g-4">
+        <div class="col-md-3 col-6">
+            <div class="card p-4">
+                <h2 class="text-primary mb-0 display-4">{{ player_count }}</h2>
+                <p class="text-muted mb-0 small">Players Analyzed</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card p-4">
+                <h2 class="text-success mb-0 display-4">10</h2>
+                <p class="text-muted mb-0 small">ML Features</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card p-4">
+                <h2 class="text-info mb-0 display-4">0.51</h2>
+                <p class="text-muted mb-0 small">R² Score</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="card p-4">
+                <h2 class="text-warning mb-0 display-4">24/7</h2>
+                <p class="text-muted mb-0 small">Availability</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Technology Stack -->
+<div class="container mb-5">
+    <h2 class="text-center mb-4">
+        <i class="bi bi-code-square"></i> Technology Stack
+    </h2>
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-body p-4">
+                    <div class="row text-center">
+                        <div class="col-md-4 mb-3">
+                            <i class="bi bi-robot display-4 text-primary"></i>
+                            <h5 class="mt-2">Machine Learning</h5>
+                            <p class="small text-muted">Random Forest<br>scikit-learn</p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <i class="bi bi-calculator display-4 text-success"></i>
+                            <h5 class="mt-2">Optimization</h5>
+                            <p class="small text-muted">Linear Programming<br>PuLP</p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <i class="bi bi-server display-4 text-info"></i>
+                            <h5 class="mt-2">Backend</h5>
+                            <p class="small text-muted">Flask API<br>Python</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <div class="card text-center border-0" style="background: var(--fpl-purple); color: white; padding: 3rem;">
+        <h3 class="mb-3">Ready to dominate your FPL league?</h3>
+        <p class="mb-4">Get instant AI-powered predictions and optimal squad recommendations</p>
+        <div>
+            <a href="/predictions" class="btn btn-light btn-lg me-2">
+                <i class="bi bi-graph-up-arrow"></i> Predictions
+            </a>
+            <a href="/squads" class="btn btn-outline-light btn-lg">
+                <i class="bi bi-people-fill"></i> Squads
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
