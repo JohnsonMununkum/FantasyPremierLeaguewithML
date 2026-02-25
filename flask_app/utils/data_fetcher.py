@@ -195,8 +195,23 @@ class FPLDataFetcher:
             
             print(f"[{datetime.now()}] Calculated 10 features for {len(features_df)} players")
             print(f"{current_gw}")
-            return True
+            return True    
                     
         except Exception as e:
             print(f"[{datetime.now()}] Error updating features: {e}")
             raise
+    
+    # Storing the time that the data was last updated in the database, using it for display on the frontend
+    def save_update_timestamp(self):
+        # connecting to the database and saving the current timestamp in a table called last_update
+        try:
+            conn = sqlite3.connect(self.db_path)
+            timestamp_df = pd.DataFrame([{
+                'last_update': datetime.now().isoformat()
+            }])
+            timestamp_df.to_sql('last_update', conn, if_exists='replace', index=False)
+            conn.close()
+            print(f"[{datetime.now()}] Update timestamp saved")
+        # catching any exceptions that occur during the database operation and printing an error message
+        except Exception as e:
+            print(f"[{datetime.now()}] Error saving timestamp: {e}")
