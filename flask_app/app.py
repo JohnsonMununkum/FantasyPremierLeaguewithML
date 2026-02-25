@@ -30,7 +30,52 @@ def load_latest_data():
 # Renders the home page with an overview of the project and its features
 @app.route('/')
 def home():
-    return render_template('index.html')
+    # Getting the last update timestamp and calculate time ago
+    last_update = "Unknown"
+    
+    # Getting the last update timestamp from the database
+    try:
+        conn = sqlite3.connect('models/fpl_data.db')
+        query = "SELECT last_update FROM last_update LIMIT 1"
+        result = pd.read_sql_query(query, conn)
+        conn.close()
+        
+        #  If the last update timestamp is available, then calculates how long ago it was 
+        if len(result) > 0:
+            last_update_dt = datetime.fromisoformat(result['last_update'][0])
+            
+            # Calculates time difference from current time to last update time
+            now = datetime.now()
+            diff = now - last_update_dt
+            
+            # Formats as "X time ago"
+            if diff.days > 0:
+                last_update = f"{diff.days} day{'s' if diff.days > 1 else ''} ago"
+            elif diff.seconds >= 3600:
+                hours = diff.seconds // 3600
+                last_update = f"{hours} hour{'s' if hours > 1 else ''} ago"
+            elif diff.seconds >= 60:
+                minutes = diff.seconds // 60
+                last_update = f"{minutes} minute{'s' if minutes > 1 else ''} ago"
+            else:
+                last_update = "Just now"
+    except Exception as e:
+        last_update = "Active"
+    
+    # Getting player count
+    # Setting to 752 as default
+    player_count = 752 
+    # Getting the player count from the database to display on the home page
+    try:
+        conn = sqlite3.connect('models/fpl_data.db')
+        result = pd.read_sql_query("SELECT COUNT(*) as count FROM players_raw", conn)
+        player_count = result['count'][0]
+        conn.close()
+    except:
+        pass
+
+    # Renders the home page template and passes the last update time and player count to be displayed on the page
+    return render_template('index.html', last_update=last_update, player_count=player_count)
 
 # Predictions page showing top and bottom players based on the latest model predictions
 @app.route('/predictions')
@@ -292,6 +337,9 @@ def trigger_update():
         
         print("Recalculating features based on the latest data")
         fetcher.update_features()
+
+        print("Saving update timestamp")
+        fetcher.save_update_timestamp()
         
         print(f"Data updated successfully")
 
