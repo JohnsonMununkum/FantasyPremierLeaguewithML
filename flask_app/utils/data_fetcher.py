@@ -9,7 +9,7 @@ import json
 # Gets the latest data from the fpl api 
 # reclalculates all features using the features in featureengineering.ipynb
 class FPLDataFetcher:
-   # Initializes the data fetcher with the database path and base URL for the FPL API
+    # Initializes the data fetcher with the database path and base URL for the FPL API
     def __init__(self, db_path='models/fpl_data.db'):
         self.db_path = db_path
         self.base_url = 'https://fantasy.premierleague.com/api'
@@ -166,7 +166,41 @@ class FPLDataFetcher:
             features_df['minutes'] = pd.to_numeric(players['minutes'], errors='coerce').fillna(0)
             
             # is_home
-            features_df['is_home'] = 0.5
+            try:
+                fixtures = pd.read_sql_query('SELECT * FROM fixtures', conn)
+                
+                # Getting the upcoming fixtures that have not been played yet
+                upcoming = fixtures[fixtures['finished'] == 0].copy()
+                
+                # Getting the next gameweek fixtures
+                if len(upcoming) > 0:
+                    next_gw = upcoming['event'].min()
+                    next_fixtures = upcoming[upcoming['event'] == next_gw]
+                    
+                    # Createing home/away mapping
+                    # Setting all as neutral
+                    features_df['is_home'] = 0.5
+                    
+                    # Checking to see if the player's team is playing at home or away in the next fixtures
+                    for idx, row in features_df.iterrows():
+                        player_team_id = players.loc[players['id'] == row['player_id'], 'team'].values
+                        
+                        if len(player_team_id) > 0:
+                            team_id = player_team_id[0]
+                            
+                            # Checking if the team is playing at home
+                            if team_id in next_fixtures['team_h'].values:
+                                features_df.loc[idx, 'is_home'] = 1
+                            # Checking if the team is playing away
+                            elif team_id in next_fixtures['team_a'].values:
+                                features_df.loc[idx, 'is_home'] = 0
+                else:
+                    # If there are no upcoming fixtures, is_home is set to neutral 0.5
+                    features_df['is_home'] = 0.5
+                    
+            except Exception as e:
+                print(f"[{datetime.now()}] Could not set is_home from fixtures: {e}")
+                features_df['is_home'] = 0.5
             
             # price
             features_df['price'] = pd.to_numeric(players['now_cost'], errors='coerce').fillna(40) / 10.0
