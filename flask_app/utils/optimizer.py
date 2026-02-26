@@ -73,6 +73,7 @@ class FPLOptimizer:
         # Organizing players by position
         for pid in selected_ids:
             player_info = {
+                'player_id': pid,
                 'name': names[pid],
                 'team': teams.get(pid, 'Unknown'),
                 'price': round(prices[pid], 1),
