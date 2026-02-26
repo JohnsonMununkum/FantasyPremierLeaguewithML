@@ -7,12 +7,13 @@ class FPLOptimizer:
     # Generates a single 15-player squad using Linear Programming
     def optimize_squad(self, players_df, budget=100.0):
         # Extracts data from the dataframe
-        player_ids = players_df.index.tolist()
-        predicted_points = players_df['predicted_points'].to_dict()
-        prices = players_df['price'].to_dict()
-        positions = players_df['position'].to_dict()
-        names = players_df['name'].to_dict()
-        teams = players_df['team'].to_dict() if 'team' in players_df.columns else {}
+        # Using the actual playerid for identifier
+        player_ids = players_df['player_id'].tolist()
+        predicted_points = players_df.set_index('player_id')['predicted_points'].to_dict()
+        prices = players_df.set_index('player_id')['price'].to_dict()
+        positions = players_df.set_index('player_id')['position'].to_dict()
+        names = players_df.set_index('player_id')['name'].to_dict()
+        teams = players_df.set_index('player_id')['team'].to_dict() if 'team' in players_df.columns else {}
         
         # Puts the players into groups by position for constraints
         gk_ids = [i for i in player_ids if positions[i] == 'GK']
@@ -114,7 +115,7 @@ class FPLOptimizer:
         
         for i in range(num_squads):
             # Creating a dataframe excluding players from previous squads
-            available_df = players_df[~players_df.index.isin(excluded_players)].copy()
+            available_df = players_df[~players_df['player_id'].isin(excluded_players)].copy()
             
             # Checking to see if there are enough players left to form another squad
             if len(available_df) < 15:
@@ -136,8 +137,7 @@ class FPLOptimizer:
                               squad['midfielders'] + squad['forwards'])
                 
                 for player in all_selected:
-                    player_indices = available_df[available_df['name'] == player['name']].index
-                    excluded_players.update(player_indices)
+                    excluded_players.add(player['player_id'])
             else:
                 # if no more optimal squads can be generated the process is stopped
                 break
