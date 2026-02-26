@@ -2,6 +2,7 @@
 # Loads the trained Random Forest model created in ml_training
 import pickle
 import pandas as pd
+import numpy as np
 
 class FPLPredictor:
     def __init__(self, model_path='models/fpl_predictor_model.pkl'):
@@ -23,14 +24,45 @@ class FPLPredictor:
         ]
     
     # Predicts points for a given player data DataFrame using the loaded model and defined features
+    # added a fallback mechanism to use rolling average points if the model predictions are not working properly
     def predict_points(self, player_data):
-        # Extracts the relevant features from the player data and uses the model to predict points
+        # Extracting the features
         X = player_data[self.features]
-        # uses the trained model to predict points & returns an array of the predicted points
-        # & making the number a whole number
-        # handling missing values
+        
+        # handling mising values
         X = X.fillna(0)
-        return self.model.predict(X).round(0)
+        
+        try:
+            # Getting the model predictions
+            predictions = self.model.predict(X)
+            
+            # Clipping negative predictions to 0
+            predictions = np.maximum(predictions, 0)
+            
+            # Checking if the models predictions are too uniform
+            unique_predictions = len(np.unique(predictions))
+            max_prediction = np.max(predictions)
+
+            # If model is only predicting a few unique values
+            # it is broken so using rolling average points as a fallback instead
+            if unique_predictions < 10 or max_prediction < 5.0:
+                print(f"Model only predicts {unique_predictions} unique values")
+                print(f"  Max prediction: {max_prediction:.1f}")
+                print("Using rolling_avg_points as fallback")
+                
+                # Using rolling average as prediction
+                fallback_predictions = player_data['rolling_avg_points'].fillna(0)
+                return fallback_predictions.round(1)
+            
+            # If model is working using the models predictions
+            return predictions.round(1)
+            
+        except Exception as e:
+            # Error using the model for predictions, using rolling average points as a fallback instead
+            print(f"Prediction failed: {e}")
+            print("Using rolling_avg_points as fallback")
+            fallback_predictions = player_data['rolling_avg_points'].fillna(0)
+            return fallback_predictions.round(1)
     
     # Predicts points for players in a specific position and returns the top 10 players based on predicted points
     def predict_by_position(self, df, position):

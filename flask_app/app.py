@@ -16,7 +16,7 @@ def initialize_database():
         db_path = 'models/fpl_data.db'
         
         if not os.path.exists(db_path):
-            print("Database file not found - this shouldn't happen!")
+            print("Database file not found at models/fpl_data.db")
             print("Database should be included in deployment.")
             return
         
