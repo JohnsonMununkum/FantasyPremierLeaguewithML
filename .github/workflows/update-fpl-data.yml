@@ -45,11 +45,13 @@ jobs:
       - name: Update last updated timestamp on Render
         if: success()
         run: |
-          curl -X PATCH \
+          response=$(curl -X PUT \
             -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
             -H "Content-Type: application/json" \
-            -d '{"envVars": [{"key": "LAST_UPDATED", "value": "'"$(date -u +%Y-%m-%dT%H:%M:%S)"'"}]}' \
-            "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/env-vars"
+            -d '[{"key": "LAST_UPDATED", "value": "'"$(date -u +%Y-%m-%dT%H:%M:%S)"'"}]' \
+            -s \
+            "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/env-vars")
+          echo "Render API response: $response"
       
       - name: Update complete
         if: success()
