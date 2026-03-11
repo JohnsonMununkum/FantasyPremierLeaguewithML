@@ -16,11 +16,29 @@
 </div>
 
 <div class="container mb-5">
-    <!-- Refresh button to refresh predictions -->
-    <div class="text-end mb-3">
-        <button id="refreshBtn" class="btn btn-primary" onclick="loadPredictions()">
-            <i class="bi bi-arrow-clockwise"></i> Refresh Predictions
-        </button>
+    <!-- Search, Filter, and Refresh Buttons -->
+    <div class="row mb-3">
+        <div class="col-md-6 mb-2 mb-md-0">
+            <!-- Search input for filtering players -->
+            <input type="text" id="playerSearch" class="form-control" 
+                   placeholder="Search players by name or team">
+        </div>
+        <div class="col-md-4 mb-2 mb-md-0">
+            <div class="btn-group w-100" role="group">
+                <!-- Position filter buttons by positions & all positions-->
+                <button type="button" class="btn btn-outline-primary active" onclick="filterPosition('ALL')">All</button>
+                <button type="button" class="btn btn-outline-primary" onclick="filterPosition('GK')">GK</button>
+                <button type="button" class="btn btn-outline-primary" onclick="filterPosition('DEF')">DEF</button>
+                <button type="button" class="btn btn-outline-primary" onclick="filterPosition('MID')">MID</button>
+                <button type="button" class="btn btn-outline-primary" onclick="filterPosition('FWD')">FWD</button>
+            </div>
+        </div>
+        <div class="col-md-2">
+                <!-- Refresh button to refresh predictions -->
+            <button id="refreshBtn" class="btn btn-primary w-100" onclick="loadPredictions()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh Predictions
+            </button>
+        </div>
     </div>
 
     <!-- The Spinner shows while waiting for the api response -->
@@ -188,5 +206,60 @@
         document.getElementById('errorMessage').style.display = 'block';
         document.getElementById('errorText').textContent = message;
     }
+    
+    // Event listener for the search input to filter players in both tables
+     document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('playerSearch');
+        
+        if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                
+                // Search in both top and bottom tables
+                ['topPlayersBody', 'bottomPlayersBody'].forEach(tableId => {
+                    const rows = document.querySelectorAll(`#${tableId} tr`);
+                    
+                    // Loop through each row and check if it matches the search term
+                    rows.forEach(row => {
+                        const text = row.textContent.toLowerCase();
+                        // Show the row if it matches the search term, otherwise hide it
+                        if (text.includes(searchTerm)) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                });
+            });
+        }
+    });
+
+    // Function to filter players by position when a position button is clicked
+    function filterPosition(position) {
+        // Update active button
+        const buttons = document.querySelectorAll('.btn-group button');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        // Filter rows in both tables
+        ['topPlayersBody', 'bottomPlayersBody'].forEach(tableId => {
+            const rows = document.querySelectorAll(`#${tableId} tr`);
+            
+            // Loop through each row and check the position badge to determine if it should be shown or hidden
+            rows.forEach(row => {
+                const positionBadge = row.querySelector('.badge.position-badge');
+                
+                // Show the row if the position matches the selected position or if all is selected, otherwise hide it
+                if (position === 'ALL') {
+                    row.style.display = '';
+                } else if (positionBadge && positionBadge.textContent === position) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }  
+
 </script>
 {% endblock %}
