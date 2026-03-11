@@ -138,6 +138,93 @@
         .clickable-row:hover {
             background-color: #e9ecef;
         }
+
+        /* ── Dark mode to override themes ── */
+        [data-bs-theme="dark"] body {
+            background: linear-gradient(to bottom, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+        }
+
+        [data-bs-theme="dark"] .card {
+            background-color: #1e1e2e;
+            color: #e0e0e0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        }
+
+        [data-bs-theme="dark"] .card:hover {
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+        }
+
+        [data-bs-theme="dark"] .table {
+            color: #e0e0e0;
+        }
+
+        [data-bs-theme="dark"] .table tbody tr {
+            background-color: #1e1e2e;
+            border-color: #333;
+        }
+
+        [data-bs-theme="dark"] .table tbody tr:hover,
+        [data-bs-theme="dark"] .clickable-row:hover {
+            background-color: #2a2a3e !important;
+        }
+
+        [data-bs-theme="dark"] .prediction-high {
+            background-color: #1a3a2a !important;
+            color: #90ee90;
+        }
+
+        [data-bs-theme="dark"] .prediction-low {
+            background-color: #3a1a1a !important;
+            color: #ff9999;
+        }
+
+        [data-bs-theme="dark"] .hero {
+            background: linear-gradient(135deg, #1a0020 0%, #2a0030 100%);
+        }
+
+        [data-bs-theme="dark"] footer {
+            background-color: #0d000f;
+        }
+
+        [data-bs-theme="dark"] .modal-content {
+            background-color: #1e1e2e;
+            color: #e0e0e0;
+        }
+
+        [data-bs-theme="dark"] .modal-header,
+        [data-bs-theme="dark"] .modal-footer {
+            border-color: #333;
+        }
+
+        [data-bs-theme="dark"] .list-group-item {
+            background-color: #1e1e2e;
+            color: #e0e0e0;
+            border-color: #333;
+        }
+
+        [data-bs-theme="dark"] .text-muted {
+            color: #9a9ab0 !important;
+        }
+
+        [data-bs-theme="dark"] input,
+        [data-bs-theme="dark"] select,
+        [data-bs-theme="dark"] .form-control,
+        [data-bs-theme="dark"] .form-select {
+            background-color: #2a2a3e;
+            color: #e0e0e0;
+            border-color: #444;
+        }
+
+        [data-bs-theme="dark"] input:focus,
+        [data-bs-theme="dark"] select:focus,
+        [data-bs-theme="dark"] .form-control:focus,
+        [data-bs-theme="dark"] .form-select:focus {
+            background-color: #2a2a3e;
+            color: #e0e0e0;
+            border-color: var(--fpl-pink);
+            box-shadow: 0 0 0 0.2rem rgba(255, 40, 130, 0.25);
+        }
     </style>
     
     {% block extra_css %}{% endblock %}
