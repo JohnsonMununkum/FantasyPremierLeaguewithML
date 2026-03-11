@@ -74,14 +74,11 @@ def home():
     
     # Getting the last update timestamp from the database
     try:
-        conn = sqlite3.connect('models/fpl_data.db')
-        query = "SELECT last_update FROM last_update LIMIT 1"
-        result = pd.read_sql_query(query, conn)
-        conn.close()
+        last_update_str = os.environ.get('LAST_UPDATED')
         
         #  If the last update timestamp is available, then calculates how long ago it was 
-        if len(result) > 0:
-            last_update_dt = datetime.fromisoformat(result['last_update'][0])
+        if last_update_str:
+            last_update_dt = datetime.fromisoformat(last_update_str)
             
             # Calculates time difference from current time to last update time
             now = datetime.now()

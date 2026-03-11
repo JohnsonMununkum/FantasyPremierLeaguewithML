@@ -42,6 +42,15 @@ jobs:
             exit 1
           fi
       
+      - name: Update last updated timestamp on Render
+        if: success()
+        run: |
+          curl -X PATCH \
+            -H "Authorization: Bearer ${{ secrets.rnd_4zzIftl9nw1hYAE80TDhgwppvt4Y }}" \
+            -H "Content-Type: application/json" \
+            -d '{"envVars": [{"key": "LAST_UPDATED", "value": "'"$(date -u +%Y-%m-%dT%H:%M:%S)"'"}]}' \
+            "https://api.render.com/v1/services/${{ secrets.srv-d6bglbvpm1nc739jiqog }}/env-vars"
+      
       - name: Update complete
         if: success()
         run: |
