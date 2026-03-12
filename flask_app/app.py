@@ -262,6 +262,18 @@ def api_predictions_all():
             'message': str(e)
         }), 500
 
+# Endpoint to get predictions for all players in the database
+@app.route('/api/predictions/all-players')
+def api_all_players():
+    try:
+        df = load_latest_data()
+        df['predicted_points'] = predictor.predict_points(df)
+        all_players = df[['player_id', 'name', 'position', 'team', 'price', 'predicted_points']].to_dict('records')
+        return jsonify({'status': 'success', 'players': all_players})
+    
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 # Endpoint to get a single optimal squad of 15 players based on predicted points and constraints
 @app.route('/api/optimize')
 def api_optimize():

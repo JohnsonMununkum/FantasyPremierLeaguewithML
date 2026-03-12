@@ -112,6 +112,32 @@
         </div>
     </div>
 
+    <!-- Search Results Table -->
+    <div id="searchResults" style="display: none;">
+        <div class="card mb-4">
+            <div class="card-header text-white" style="background: linear-gradient(135deg, var(--fpl-purple) 0%, #4a0052 100%);">
+                <h3 class="mb-0"><i class="bi bi-search"></i> Search Results</h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Player</th>
+                                <th>Position</th>
+                                <th>Team</th>
+                                <th>Price</th>
+                                <th>Predicted Points</th>
+                            </tr>
+                        </thead>
+                        <tbody id="searchResultsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Error Message is shown if api fails to load predictions -->
     <div id="errorMessage" class="alert alert-danger" style="display: none;">
         <i class="bi bi-exclamation-circle-fill"></i>
@@ -210,29 +236,75 @@
     // Event listener for the search input to filter players in both tables
      document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('playerSearch');
-        
+        let allPlayers =[];
+
+        //pre feching all players to enable search functionality without waiting for the API response
+         fetch('/api/predictions/all-players')
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') allPlayers = data.players;
+            });
+
         if (searchInput) {
             searchInput.addEventListener('input', function(e) {
-                const searchTerm = e.target.value.toLowerCase();
+                const searchTerm = e.target.value.toLowerCase().trim();
                 
-                // Search in both top and bottom tables
-                ['topPlayersBody', 'bottomPlayersBody'].forEach(tableId => {
-                    const rows = document.querySelectorAll(`#${tableId} tr`);
-                    
-                    // Loop through each row and check if it matches the search term
-                    rows.forEach(row => {
-                        const text = row.textContent.toLowerCase();
-                        // Show the row if it matches the search term, otherwise hide it
-                        if (text.includes(searchTerm)) {
-                            row.style.display = '';
-                        } else {
-                            row.style.display = 'none';
-                        }
-                    });
-                });
+                if (!searchTerm){
+                    // if search is cleared, hide search results and show top & bottom tables
+                    document.getElementById('searchResults').style.display = 'none';
+                    document.getElementById('topPlayers').style.display = 'block';
+                    document.getElementById('bottomPlayers').style.display = 'block';
+                    return;
+                }
+
+                // filtering players based on the search term
+                const filtered = allPlayers.filter(p =>
+                    p.name.toLowerCase().includes(searchTerm) ||
+                    p.team.toLowerCase().includes(searchTerm)
+                );
+
+                // Hiding the top & bottom tables when searching
+                document.getElementById('topPlayers').style.display = 'none';
+                document.getElementById('bottomPlayers').style.display = 'none';
+                document.getElementById('searchResults').style.display = 'block';
+
+                const tbody = document.getElementById('searchResultsBody');
+                tbody.innerHTML = ''; 
+
+                // Populating the search results table with the filtered players
+                if (filtered.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No players found</td></tr>';
+                    return;
+                } 
+
+                // Looping through the filtered players and adding them to the search results table
+                filtered.forEach((player, index) => {
+                    const row = document.createElement('tr');
+                    row.className = 'clickable-row';
+                    row.onclick = () => window.location.href = `/player/${player.player_id}`;
+
+                    // Getting the position badge color for the search results
+                    let positionClass = '';
+                    switch(player.position) {
+                        case 'GK': positionClass = 'bg-gk'; break;
+                        case 'DEF': positionClass = 'bg-def'; break;
+                        case 'MID': positionClass = 'bg-mid'; break;
+                        case 'FWD': positionClass = 'bg-fwd'; break;
+                    }
+
+                    row.innerHTML = `
+                    <td><strong>${index + 1}</strong></td>
+                    <td>${player.name}</td>
+                    <td><span class="badge position-badge ${positionClass}">${player.position}</span></td>
+                    <td>${player.team}</td>
+                    <td>£${player.price.toFixed(1)}</td>
+                    <td><strong>${Math.round(player.predicted_points)}</strong></td>
+                `;
+                tbody.appendChild(row);
             });
-        }
-    });
+        });
+    }
+});
 
     // Function to filter players by position when a position button is clicked
     function filterPosition(position) {
