@@ -41,13 +41,11 @@ class FPLPredictor:
             
             # Checking if the models predictions are too uniform
             unique_predictions = len(np.unique(predictions))
-            max_prediction = np.max(predictions)
 
             # If model is only predicting a few unique values
             # it is broken so using rolling average points as a fallback instead
-            if unique_predictions < 10 or max_prediction < 5.0:
+            if unique_predictions < 5:
                 print(f"Model only predicts {unique_predictions} unique values")
-                print(f"  Max prediction: {max_prediction:.1f}")
                 print("Using rolling_avg_points as fallback")
                 
                 # Using rolling average as prediction
