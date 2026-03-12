@@ -292,14 +292,31 @@
                         case 'FWD': positionClass = 'bg-fwd'; break;
                     }
 
-                    row.innerHTML = `
-                    <td><strong>${index + 1}</strong></td>
-                    <td>${player.name}</td>
-                    <td><span class="badge position-badge ${positionClass}">${player.position}</span></td>
-                    <td>${player.team}</td>
-                    <td>£${player.price.toFixed(1)}</td>
-                    <td><strong>${Math.round(player.predicted_points)}</strong></td>
-                `;
+                    // Checking if the player is in the top 10 or bottom 10 to add a badge in the search results
+                    const topIds = Array.from(document.querySelectorAll('#topPlayersBody tr'))
+                        .map(r => r.onclick?.toString().match(/\d+/)?.[0]);
+                    const bottomIds = Array.from(document.querySelectorAll('#bottomPlayersBody tr'))
+                        .map(r => r.onclick?.toString().match(/\d+/)?.[0]);
+
+                    // Converting player ID to string for comparison
+                    const playerIdStr = String(player.player_id);
+                    let rankBadge = '';
+                    
+                    // Adding a badge next to the player's name in the search results if they are in the top 10 or bottom 10
+                    if (topIds.includes(playerIdStr)) {
+                        rankBadge = '<span class="badge bg-success ms-1">Top 10</span>';
+                    } else if (bottomIds.includes(playerIdStr)) {
+                        rankBadge = '<span class="badge bg-danger ms-1">Avoid</span>';
+                    }
+
+                     row.innerHTML = `
+                        <td><strong>${index + 1}</strong></td>
+                        <td>${player.name} ${rankBadge}</td>
+                        <td><span class="badge position-badge ${positionClass}">${player.position}</span></td>
+                        <td>${player.team}</td>
+                        <td>£${player.price.toFixed(1)}</td>
+                        <td><strong>${Math.round(player.predicted_points)}</strong></td>
+                    `;
                 tbody.appendChild(row);
             });
         });
@@ -313,8 +330,8 @@
         buttons.forEach(btn => btn.classList.remove('active'));
         event.target.classList.add('active');
         
-        // Filter rows in both tables
-        ['topPlayersBody', 'bottomPlayersBody'].forEach(tableId => {
+        // Filter rows in all tables
+        ['topPlayersBody', 'bottomPlayersBody', 'searchResultsBody'].forEach(tableId => {
             const rows = document.querySelectorAll(`#${tableId} tr`);
             
             // Loop through each row and check the position badge to determine if it should be shown or hidden
