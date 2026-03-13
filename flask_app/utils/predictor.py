@@ -1,12 +1,12 @@
 # FPL Predictor using a pre-trained model to predict player points based on the features implemented
-# Loads the trained Random Forest model created in ml_training
+# Loads the trained XGBoost model created in training.py
 import pickle
 import pandas as pd
 import numpy as np
 
 class FPLPredictor:
     def __init__(self, model_path='models/fpl_predictor_model.pkl'):
-        # Loads the random Forest Model from the pickel file created in ml_training
+        # Loads the XGBoost Model from the pickel file created in training.py
         self.model = pickle.load(open(model_path, 'rb'))
         # Defining the features used for predictions
         # Features were all engineered in the featureengineering file
