@@ -62,8 +62,10 @@ def load_latest_data():
     conn.close()
     
     # Getting the latest gameweek per player
-    df = df.sort_values('gameweek').groupby('player_id').tail(1).reset_index(drop=True)
-    
+    #df = df.sort_values('gameweek').groupby('player_id').tail(1).reset_index(drop=True)
+    df = df.sort_values('gameweek').drop_duplicates(subset=['player_id', 'gameweek'], keep='last')
+    df = df.groupby('player_id').tail(1).reset_index(drop=True)
+
     return df
 # HTML Routes
 # Renders the home page with an overview of the project and its features
@@ -137,8 +139,8 @@ def index():
         'status': 'running',
         'model': {
             'type': 'Random Forest',
-            'r_squared': 0.508,
-            'mae': 0.78,
+            'r_squared': 0.503,
+            'mae': 0.73,
             'features': 10
         },
         'endpoints': {
@@ -323,8 +325,9 @@ def api_player_detail(player_id):
         conn = sqlite3.connect('models/fpl_data.db')
         
         # Getting the specific player from the features table
-        query = f"SELECT * FROM features WHERE player_id = {player_id} ORDER BY gameweek DESC LIMIT 1"
-        player_df = pd.read_sql_query(query, conn)
+        df = load_latest_data()
+        df['predicted_points'] = predictor.predict_points(df)
+        player_df = df[df['player_id'] == player_id].copy()
         
         if len(player_df) == 0:
             conn.close()
@@ -334,7 +337,6 @@ def api_player_detail(player_id):
             }), 404
         
         # Getting the predicted points for the player
-        player_df['predicted_points'] = predictor.predict_points(player_df)
         player_data = player_df.iloc[0].to_dict()
         
         # Getting raw data for stats

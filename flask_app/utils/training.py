@@ -117,7 +117,7 @@ df['pos_FWD'] = (df['position'] == 'FWD').astype(int)
 print(f"Saving to {DB_PATH}")
 conn = sqlite3.connect(DB_PATH)
 # Saving to features table, replacing it if it already exists, and not including the index as a column in the database
-df.to_sql('features', conn, if_exists='replace', index=False)
+df.to_sql('training_features', conn, if_exists='replace', index=False)
 conn.close()
 
 # Training the model using the engineered features
