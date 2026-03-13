@@ -150,30 +150,35 @@ y = df_played['total_points']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Training a Random Forest Regressor with specified hyperparameters to predict player points based on the engineered features
-# model = RandomForestRegressor(
-#     n_estimators=200,
-#     max_depth=10,
-#     min_samples_split=20,
-#     min_samples_leaf=10,
-#     max_features='sqrt',
-#    random_state=42,
-#    n_jobs=-1
-#)
+# Using random forest even though predicitions are capped even if a player scored 20 points last week
+# as it gives out a better R² and MAE compared to XGBoost, which seems to be overfitting with the current hyperparameters and data size
+model = RandomForestRegressor(
+    n_estimators=200,
+    max_depth=10,
+    min_samples_split=20,
+    min_samples_leaf=10,
+    max_features='sqrt',
+    random_state=42,
+    n_jobs=-1
+)
 
 # Training an XGBoost Regressor with specified hyperparameters to predict player points based on the engineered features
 # Seeing how different the performance is compared to the Random Forest model, and if it provides better predictions for the optimizer to work with
 # as saw that random forest predictions are capped even if a player scored 20 points last week
 # the prediction would be around the mean points for that player, which is around 5-6 points, and it would never predict a very high score for a player even if they have the potential to score big in a given week
-model = XGBRegressor(
-    n_estimators=300,
-    max_depth=6,
-    learning_rate=0.05,
-    subsample=0.8,
-    colsample_bytree=0.8,
-    min_child_weight=5,
-    random_state=42,
-    n_jobs=-1
-)
+# MAE is 1.8, R² is 0.203 with XGBoost so the model is overfitting with these hyperparameters
+# model = XGBRegressor(
+    # n_estimators=100,
+    # max_depth=4,
+    # learning_rate=0.1,
+    # subsample=0.7,
+    # colsample_bytree=0.7,
+    # min_child_weight=10,
+    # reg_alpha=0.1,
+    # reg_lambda=1.0,
+    # random_state=42,
+    # n_jobs=-1
+# )
 # Fitting the model to the training data
 model.fit(X_train, y_train)
 
