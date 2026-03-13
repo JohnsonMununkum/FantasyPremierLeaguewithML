@@ -152,18 +152,51 @@ class FPLDataFetcher:
             features_df['rolling_avg_points'] = pd.to_numeric(players['form'], errors='coerce').fillna(0)
             
             # opponent_difficulty
-            # Uses average of team difficulty for upcoming fixtures
+            # Uses fpl api difficulty ratings for upcoming fixtures
             try:
                 fixtures = pd.read_sql_query('SELECT * FROM fixtures', conn)
-                # Calculating opponent difficulty based on team strength
-                team_strength = players.groupby('team')['total_points'].mean()
-                features_df['opponent_difficulty'] = 3.0
-            except:
-                # default difficulty is set to 3.0, if fixtures data is not available
+                upcoming = fixtures[fixtures['finished'] == 0].copy()
+                
+                # Getting the next gameweek fixtures
+                if len(upcoming) > 0:
+                    next_gw = upcoming['event'].min()
+                    next_fixtures = upcoming[upcoming['event'] == next_gw]
+                    
+                    # Default difficulty
+                    features_df['opponent_difficulty'] = 3.0
+                    
+                    # Map each player's team to their opponent's difficulty
+                    for idx, row in features_df.iterrows():
+                        player_team_id = players.loc[players['id'] == row['player_id'], 'team'].values
+                        
+                        # Checking if we have a team id for the player
+                        if len(player_team_id) > 0:
+                            team_id = player_team_id[0]
+                            
+                            # Checking if the team is playing at home or away and getting the corresponding opponent difficulty
+                            home_fixture = next_fixtures[next_fixtures['team_h'] == team_id]
+                            away_fixture = next_fixtures[next_fixtures['team_a'] == team_id]
+                            
+                            # If the team is playing at home, opponent difficulty is based on the away team, and vice versa
+                            # Converting the difficulty from a 1-5 scale to a 1-10 scale, using ((raw - 1) / 4) * 9 + 1
+                            # as the random forest model was trained on a 1-10 scale, but the FPL API provides difficulty on a 1-5 scale
+                            if len(home_fixture) > 0:
+                                raw = home_fixture['team_a_difficulty'].values[0]
+                                features_df.loc[idx, 'opponent_difficulty'] = ((raw - 1) / 4) * 9 + 1
+                            elif len(away_fixture) > 0:
+                                raw = away_fixture['team_h_difficulty'].values[0]
+                                features_df.loc[idx, 'opponent_difficulty'] = ((raw - 1) / 4) * 9 + 1
+                else:
+                    # If there are no upcoming fixtures, setting opponent difficulty to a default value of 3
+                    features_df['opponent_difficulty'] = 3.0
+            except Exception as e:
+                print(f"Could not set opponent_difficulty: {e}")
                 features_df['opponent_difficulty'] = 3.0
             
             # Expected minutes based on recent playing time
-            features_df['minutes'] = pd.to_numeric(players['minutes'], errors='coerce').fillna(0)
+            # Dividing total season minutes by current gameweek to get per-game average 
+            total_minutes = pd.to_numeric(players['minutes'], errors='coerce').fillna(0)
+            features_df['minutes'] = (total_minutes / max(current_gw, 1)).clip(0, 90)
             
             # is_home
             try:
