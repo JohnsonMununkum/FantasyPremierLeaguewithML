@@ -133,10 +133,10 @@
                                 <i class="bi bi-cash-coin"></i> £${squad.total_cost.toFixed(1)}m
                             </span>
                             <span class="badge bg-success me-2">
-                                <i class="bi bi-graph-up"></i> ${Math.round(squad.total_predicted)} pts
+                                <i class="bi bi-graph-up"></i> ${(squad.total_predicted.toFixed(1))} pts
                             </span>
                             <span class="badge bg-warning text-dark">
-                                <i class="bi bi-star-fill"></i> ${Math.round(squad.total_with_captain)} pts (with captain)
+                                <i class="bi bi-star-fill"></i> ${(squad.total_with_captain.toFixed(1))} pts (with captain)
                             </span>
                         </div>
                     </div>
@@ -210,7 +210,7 @@
                     </td>
                     <td>${player.team}</td>
                     <td>£${player.price.toFixed(1)}</td>
-                    <td><span class="badge ${badgeClass}">${Math.round(player.predicted_points)}</span></td>
+                    <td><span class="badge ${badgeClass}">${player.predicted_points.toFixed(1)}</span></td>
                 </tr>
             `;
         });

@@ -217,7 +217,7 @@
                 <td><span class="badge position-badge ${positionClass}">${player.position}</span></td>
                 <td>${player.team}</td>
                 <td>£${player.price.toFixed(1)}</td>
-                <td><strong>${Math.round(player.predicted_points)}</strong></td>
+                <td><strong>${(player.predicted_points.toFixed(1))}</strong></td>
             `;
             
             tbody.appendChild(row);
@@ -315,7 +315,7 @@
                         <td><span class="badge position-badge ${positionClass}">${player.position}</span></td>
                         <td>${player.team}</td>
                         <td>£${player.price.toFixed(1)}</td>
-                        <td><strong>${Math.round(player.predicted_points)}</strong></td>
+                        <td><strong>${player.predicted_points.toFixed(1)}</strong></td>
                     `;
                 tbody.appendChild(row);
             });

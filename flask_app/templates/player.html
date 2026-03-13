@@ -104,7 +104,7 @@
                             <div class="card bg-light">
                                 <div class="card-body">
                                     <h6 class="text-muted mb-1">Next GW Prediction</h6>
-                                    <h2 class="text-primary mb-0">${Math.round(player.predicted_points)}</h2>
+                                    <h2 class="text-primary mb-0">${(player.predicted_points.toFixed(1))}</h2>
                                     <small class="text-muted">points</small>
                                 </div>
                             </div>
@@ -147,7 +147,7 @@
                                 </tr>
                                 <tr>
                                     <td><strong>Clean Sheets</strong></td>
-                                    <td class="text-end">${Math.round((player.clean_sheets_rolling_avg || 0) * 10)}</td>
+                                    <td class="text-end">${((player.clean_sheets || 0))}</td>
                                 </tr>
                             </table>
                         </div>
