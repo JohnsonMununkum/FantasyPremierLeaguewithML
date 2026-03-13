@@ -323,7 +323,7 @@ def api_player_detail(player_id):
         conn = sqlite3.connect('models/fpl_data.db')
         
         # Getting the specific player from the features table
-        query = f"SELECT * FROM features WHERE player_id = {player_id}"
+        query = f"SELECT * FROM features WHERE player_id = {player_id} ORDER BY gameweek DESC LIMIT 1"
         player_df = pd.read_sql_query(query, conn)
         
         if len(player_df) == 0:
