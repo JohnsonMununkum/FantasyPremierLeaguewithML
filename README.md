@@ -5,6 +5,8 @@ The application is built with Flask and deployed on Render, with automated data 
 
 Live Application: https://fpl-intelligence-web.onrender.com/
 
+Screencast Demo: https://youtu.be/8K4ZN0d-I4c
+
 ## Features 
 - Player Predictions - Predicts Fantasy Premier League points for all players for the upcoming gameweek using the Random Forest model (R² = 0.503, MAE = 0.73)
 
